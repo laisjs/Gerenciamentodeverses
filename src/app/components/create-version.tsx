@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { FarmSelection } from "@/app/components/farm-selection";
+import { InstallerUpload } from "@/app/components/installer-upload";
 import { useFarmGroups } from "@/app/contexts/farm-group-context";
 import { format } from "date-fns";
 
@@ -31,6 +32,7 @@ export function CreateVersion({ onBack }: CreateVersionProps) {
   const [versionNumber, setVersionNumber] = useState("");
   const [installerUrl, setInstallerUrl] = useState("");
   const [updateType, setUpdateType] = useState("optional");
+
   const [rolloutType, setRolloutType] = useState("immediate");
   const [isPreRelease, setIsPreRelease] = useState(false);
   const [requiresServerUpdate, setRequiresServerUpdate] = useState(false);
@@ -98,54 +100,49 @@ export function CreateVersion({ onBack }: CreateVersionProps) {
 
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="version">Número da Versão</Label>
-                    <Input
-                      id="version"
-                      placeholder="1.2.3"
-                      value={versionNumber}
-                      onChange={(e) => setVersionNumber(e.target.value)}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Formato de versão semântica (ex: 1.0.0 ou 2.1)
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Última versão: 1.2.3678
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="installer">URL do Instalador</Label>
-                    <Input
-                      id="installer"
-                      type="url"
-                      placeholder="https://..."
-                      value={installerUrl}
-                      onChange={(e) => setInstallerUrl(e.target.value)}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      URL direta para download do pacote de instalação (deve estar acessível)
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6">
-                  <div className="flex items-start justify-between py-2 px-4 border rounded-lg">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="server-update" className="cursor-pointer">
-                        Requer Atualização do Servidor
-                      </Label>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="version">Número da Versão</Label>
+                      <Input
+                        id="version"
+                        placeholder="1.2.3"
+                        value={versionNumber}
+                        onChange={(e) => setVersionNumber(e.target.value)}
+                        required
+                      />
                       <p className="text-xs text-muted-foreground">
-                        Servidor deve ser atualizado antes dos clientes
+                        Formato de versão semântica (ex: 1.0.0 ou 2.1)
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Última versão: 1.2.3678
                       </p>
                     </div>
-                    <Switch
-                      id="server-update"
-                      checked={requiresServerUpdate}
-                      onCheckedChange={setRequiresServerUpdate}
+
+                    <div className="flex items-start justify-between py-2 px-4 border rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label htmlFor="server-update" className="cursor-pointer">
+                          Requer Atualização do Servidor
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Servidor deve ser atualizado antes dos clientes
+                        </p>
+                      </div>
+                      <Switch
+                        id="server-update"
+                        checked={requiresServerUpdate}
+                        onCheckedChange={setRequiresServerUpdate}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Arquivo do Instalador</Label>
+                    <InstallerUpload
+                      onUploadComplete={setInstallerUrl}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      O arquivo será enviado ao S3 e a URL gerada será vinculada à versão.
+                    </p>
                   </div>
                 </div>
 
@@ -226,7 +223,7 @@ export function CreateVersion({ onBack }: CreateVersionProps) {
               <Button type="button" variant="outline" onClick={onBack}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={totalSelectedFarms === 0}>
+              <Button type="submit" disabled={totalSelectedFarms === 0 || !installerUrl}>
                 Criar Versão
               </Button>
             </div>

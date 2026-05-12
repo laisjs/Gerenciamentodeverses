@@ -1,5 +1,5 @@
 import { useState, Fragment } from "react";
-import { ArrowLeft, Info, Lock, Monitor, CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Search, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Info, Lock, Monitor, CheckCircle2, Clock, AlertCircle, ChevronDown, ChevronUp, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -7,6 +7,7 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { Alert, AlertDescription } from "@/app/components/ui/alert";
 import { Badge } from "@/app/components/ui/badge";
 import { FarmSelection } from "@/app/components/farm-selection";
+import { InstallerUpload } from "@/app/components/installer-upload";
 import { useFarmGroups } from "@/app/contexts/farm-group-context";
 import {
   Table,
@@ -486,22 +487,22 @@ export function EditVersion({ version, onBack }: EditVersionProps) {
                     </p>
                   </div>
 
-                  {/* URL do Instalador - EDITÁVEL */}
+                  {/* Instalador - EDITÁVEL */}
                   <div className="space-y-2">
-                    <Label htmlFor="installer">URL do Instalador</Label>
-                    <Input
-                      id="installer"
-                      type="url"
-                      placeholder="https://..."
-                      value={installerUrl}
-                      onChange={(e) => setInstallerUrl(e.target.value)}
+                    <Label className="flex items-center gap-2">
+                      Arquivo do Instalador
+                      {isViewOnly && <Lock className="size-3 text-slate-400" />}
+                    </Label>
+                    <InstallerUpload
+                      initialUrl={installerUrl}
+                      onUploadComplete={setInstallerUrl}
                       disabled={isViewOnly}
-                      className={isViewOnly ? "bg-slate-100 cursor-not-allowed" : ""}
-                      required
                     />
-                    <p className="text-xs text-muted-foreground">
-                      URL direta para download do pacote de instalação (deve estar acessível)
-                    </p>
+                    {!isViewOnly && (
+                      <p className="text-xs text-muted-foreground">
+                        O novo arquivo substituirá o instalador atual no S3.
+                      </p>
+                    )}
                   </div>
                 </div>
 
