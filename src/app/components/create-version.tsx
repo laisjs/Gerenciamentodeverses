@@ -40,10 +40,13 @@ export function CreateVersion({ onBack }: CreateVersionProps) {
   
   // Estados para seleção de fazendas
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [selectAllFarms, setSelectAllFarms] = useState(false);
 
   // Calcular total de fazendas que receberão a versão
   const selectedGroups = groups.filter(g => selectedGroupIds.includes(g.id));
-  const totalSelectedFarms = selectedGroups.reduce((acc, g) => acc + g.farms.length, 0);
+  const totalSelectedFarms = selectAllFarms
+    ? 500 // Total de fazendas na base (mock)
+    : selectedGroups.reduce((acc, g) => acc + g.farms.length, 0);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,6 +217,7 @@ export function CreateVersion({ onBack }: CreateVersionProps) {
 
               <FarmSelection
                 onSelectedGroupsChange={setSelectedGroupIds}
+                onSelectAllFarmsChange={setSelectAllFarms}
               />
             </div>
 

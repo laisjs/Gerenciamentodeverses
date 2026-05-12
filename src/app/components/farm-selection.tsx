@@ -84,10 +84,11 @@ const mockFarms: Farm[] = generateFarms(500);
 interface FarmSelectionProps {
   onGroupsChange?: (groups: FarmGroup[]) => void;
   onSelectedGroupsChange?: (selectedGroupIds: string[]) => void;
+  onSelectAllFarmsChange?: (selectAll: boolean) => void;
   isViewOnly?: boolean;
 }
 
-export function FarmSelection({ onGroupsChange, onSelectedGroupsChange, isViewOnly = false }: FarmSelectionProps) {
+export function FarmSelection({ onGroupsChange, onSelectedGroupsChange, onSelectAllFarmsChange, isViewOnly = false }: FarmSelectionProps) {
   // Usar grupos do contexto global
   const { groups, setGroups } = useFarmGroups();
   
@@ -104,7 +105,10 @@ export function FarmSelection({ onGroupsChange, onSelectedGroupsChange, isViewOn
 
   // Estados para seleção de grupos para distribuição
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set());
-  
+
+  // Estado para selecionar todas as fazendas individuais
+  const [selectAllFarms, setSelectAllFarms] = useState(false);
+
   // Estado para seleção em lote
   const [tempSelectedFarmIds, setTempSelectedFarmIds] = useState<Set<string>>(new Set());
 
@@ -198,8 +202,26 @@ export function FarmSelection({ onGroupsChange, onSelectedGroupsChange, isViewOn
     onSelectedGroupsChange?.(Array.from(updatedSelection));
   };
 
+  // Toggle seleção de todas as fazendas
+  const toggleSelectAllFarms = () => {
+    const newValue = !selectAllFarms;
+    setSelectAllFarms(newValue);
+    onSelectAllFarmsChange?.(newValue);
+
+    // Se marcar "todas as fazendas", desmarcar todos os grupos
+    if (newValue) {
+      setSelectedGroupIds(new Set());
+      onSelectedGroupsChange?.([]);
+    }
+  };
+
   // Toggle seleção de grupo para distribuição
   const toggleGroupSelection = (groupId: string) => {
+    // Se marcar algum grupo, desmarcar "todas as fazendas"
+    if (selectAllFarms) {
+      setSelectAllFarms(false);
+    }
+
     const updated = new Set(selectedGroupIds);
     if (updated.has(groupId)) {
       updated.delete(groupId);
@@ -209,6 +231,28 @@ export function FarmSelection({ onGroupsChange, onSelectedGroupsChange, isViewOn
     setSelectedGroupIds(updated);
     onSelectedGroupsChange?.(Array.from(updated));
   };
+
+  // Selecionar/Desselecionar todos os grupos
+  const toggleSelectAllGroups = () => {
+    // Se marcar todos os grupos, desmarcar "todas as fazendas"
+    if (selectAllFarms) {
+      setSelectAllFarms(false);
+    }
+
+    if (selectedGroupIds.size === groups.length) {
+      // Se todos estão selecionados, desselecionar todos
+      setSelectedGroupIds(new Set());
+      onSelectedGroupsChange?.([]);
+    } else {
+      // Caso contrário, selecionar todos
+      const allGroupIds = new Set(groups.map(g => g.id));
+      setSelectedGroupIds(allGroupIds);
+      onSelectedGroupsChange?.(Array.from(allGroupIds));
+    }
+  };
+
+  // Verificar se todos os grupos estão selecionados
+  const allGroupsSelected = groups.length > 0 && selectedGroupIds.size === groups.length;
 
   // Remover fazenda
   const removeFarmFromSelection = (farmId: string) => {
@@ -247,17 +291,61 @@ export function FarmSelection({ onGroupsChange, onSelectedGroupsChange, isViewOn
 
   // Calcular totais
   const selectedGroups = groups.filter(g => selectedGroupIds.has(g.id));
-  const totalFarms = selectedGroups.reduce((acc, g) => acc + g.farms.length, 0);
+  const totalFarms = selectAllFarms
+    ? mockFarms.length
+    : selectedGroups.reduce((acc, g) => acc + g.farms.length, 0);
 
   return (
     <div className="space-y-4">
+      {/* BLOCO 0 — SELECIONAR TODAS AS FAZENDAS */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="mb-0.5">distribuição da versão</h3>
+          <p className="text-xs text-muted-foreground">
+            {isViewOnly
+              ? "visualização da distribuição desta versão"
+              : "escolha entre distribuir para todas as fazendas ou para grupos específicos"}
+          </p>
+        </div>
+
+        <label
+          htmlFor="select-all-farms"
+          className={`flex items-center gap-3 px-4 py-3 border-2 rounded-lg transition-all ${
+            isViewOnly ? '' : 'cursor-pointer'
+          } ${
+            selectAllFarms
+              ? 'bg-purple-50 border-[#500d5b] shadow-sm'
+              : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+          }`}
+        >
+          <Checkbox
+            id="select-all-farms"
+            checked={selectAllFarms}
+            onCheckedChange={toggleSelectAllFarms}
+            disabled={isViewOnly}
+            className="flex-shrink-0"
+          />
+          <div className="size-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: selectAllFarms ? '#500d5b' : '#e2e8f0' }}>
+            <Users className={`size-4 ${selectAllFarms ? 'text-white' : 'text-slate-400'}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`font-semibold text-sm leading-tight mb-0.5 ${selectAllFarms ? 'text-[#500d5b]' : ''}`}>
+              Selecionar todas as fazendas
+            </p>
+            <p className="text-xs text-muted-foreground leading-tight">
+              Distribuir a versão para todas as {mockFarms.length.toLocaleString('pt-BR')} fazendas cadastradas na base
+            </p>
+          </div>
+        </label>
+      </div>
+
       {/* BLOCO 1 — GERENCIAMENTO DE GRUPOS */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="mb-0.5">grupos de fazendas</h3>
             <p className="text-xs text-muted-foreground">
-              {isViewOnly ? "visualização dos grupos que receberam esta versão" : "selecione os grupos que receberão a versão"}
+              {isViewOnly ? "visualização dos grupos que receberam esta versão" : "ou selecione grupos específicos de fazendas"}
             </p>
           </div>
           {!isViewOnly && (
@@ -283,6 +371,31 @@ export function FarmSelection({ onGroupsChange, onSelectedGroupsChange, isViewOn
           </div>
         ) : (
           <div className="border rounded-lg divide-y max-h-[400px] overflow-y-auto">
+            {/* Item especial: Selecionar Todos os Grupos */}
+            {!isViewOnly && (
+              <label
+                htmlFor="select-all-groups"
+                className={`flex items-center gap-3 px-3 py-2 transition-colors bg-slate-50 border-b-2 ${
+                  selectAllFarms ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100 cursor-pointer'
+                }`}
+              >
+                <Checkbox
+                  id="select-all-groups"
+                  checked={allGroupsSelected}
+                  onCheckedChange={toggleSelectAllGroups}
+                  disabled={selectAllFarms}
+                  className="flex-shrink-0"
+                />
+                <Users className="size-4 text-slate-600 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm leading-tight">Selecionar todos os grupos</p>
+                  <p className="text-xs text-muted-foreground leading-tight">
+                    {allGroupsSelected ? 'Todos os grupos selecionados' : 'Clique para selecionar todos os grupos'}
+                  </p>
+                </div>
+              </label>
+            )}
+
             {groups.map((group) => {
               // Calcular região predominante
               const regionCounts = group.farms.reduce((acc, farm) => {
@@ -296,13 +409,15 @@ export function FarmSelection({ onGroupsChange, onSelectedGroupsChange, isViewOn
                 <label
                   key={group.id}
                   htmlFor={`select-${group.id}`}
-                  className={`flex items-center gap-3 px-3 py-2 transition-colors ${!isViewOnly && 'hover:bg-slate-50 cursor-pointer'}`}
+                  className={`flex items-center gap-3 px-3 py-2 transition-colors ${
+                    !isViewOnly && !selectAllFarms ? 'hover:bg-slate-50 cursor-pointer' : ''
+                  } ${selectAllFarms ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <Checkbox
                     id={`select-${group.id}`}
                     checked={selectedGroupIds.has(group.id)}
-                    onCheckedChange={() => !isViewOnly && toggleGroupSelection(group.id)}
-                    disabled={isViewOnly}
+                    onCheckedChange={() => !isViewOnly && !selectAllFarms && toggleGroupSelection(group.id)}
+                    disabled={isViewOnly || selectAllFarms}
                     className="flex-shrink-0"
                   />
                   <Users className="size-4 text-slate-400 flex-shrink-0" />
@@ -356,22 +471,37 @@ export function FarmSelection({ onGroupsChange, onSelectedGroupsChange, isViewOn
       </div>
 
       {/* BLOCO 2 — RESUMO DA DISTRIBUIÇÃO */}
-      {selectedGroupIds.size > 0 && (
+      {(selectAllFarms || selectedGroupIds.size > 0) && (
         <div className="rounded-lg px-4 py-3 border" style={{ backgroundColor: 'rgba(80, 13, 91, 0.08)', borderColor: 'rgba(80, 13, 91, 0.2)' }}>
           <div className="flex items-center gap-4">
             <div className="size-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#500d5b' }}>
               <Users className="size-4 text-white" />
             </div>
-            
+
             <div className="flex items-center gap-4 flex-1 text-sm" style={{ color: 'rgba(80, 13, 91, 0.9)' }}>
-              <div className="flex items-center gap-1.5">
-                <span>Grupos:</span>
-                <span className="font-semibold">{selectedGroupIds.size}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span>Total de fazendas:</span>
-                <span className="font-semibold">{totalFarms}</span>
-              </div>
+              {selectAllFarms ? (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span>Distribuição:</span>
+                    <span className="font-semibold">Todas as fazendas</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span>Total:</span>
+                    <span className="font-semibold">{totalFarms.toLocaleString('pt-BR')} fazendas</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <span>Grupos:</span>
+                    <span className="font-semibold">{selectedGroupIds.size}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span>Total de fazendas:</span>
+                    <span className="font-semibold">{totalFarms.toLocaleString('pt-BR')}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

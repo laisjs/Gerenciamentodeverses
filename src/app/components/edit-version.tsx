@@ -108,6 +108,7 @@ export function EditVersion({ version, onBack }: EditVersionProps) {
   
   // Estados para seleção de fazendas
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [selectAllFarms, setSelectAllFarms] = useState(false);
 
   const toggleFarm = (farmId: string) => {
     setExpandedFarms((prev) =>
@@ -568,6 +569,7 @@ export function EditVersion({ version, onBack }: EditVersionProps) {
 
               <FarmSelection
                 onSelectedGroupsChange={setSelectedGroupIds}
+                onSelectAllFarmsChange={setSelectAllFarms}
                 isViewOnly={isViewOnly}
               />
             </div>
