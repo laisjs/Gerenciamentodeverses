@@ -31,6 +31,7 @@ export function CreateVersion({ onBack }: CreateVersionProps) {
   const { groups } = useFarmGroups();
   const [versionNumber, setVersionNumber] = useState("");
   const [installerUrl, setInstallerUrl] = useState("");
+  const [proInstallerUrl, setProInstallerUrl] = useState("");
   const [updateType, setUpdateType] = useState("optional");
 
   const [rolloutType, setRolloutType] = useState("immediate");
@@ -55,6 +56,7 @@ export function CreateVersion({ onBack }: CreateVersionProps) {
     console.log({
       versionNumber,
       installerUrl,
+      proInstallerUrl,
       updateType,
       rolloutType,
       isPreRelease,
@@ -135,14 +137,26 @@ export function CreateVersion({ onBack }: CreateVersionProps) {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Arquivo do Instalador</Label>
-                    <InstallerUpload
-                      onUploadComplete={setInstallerUrl}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      O arquivo será enviado ao S3 e a URL gerada será vinculada à versão.
-                    </p>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Arquivo do Instalador</Label>
+                      <InstallerUpload
+                        onUploadComplete={setInstallerUrl}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        O arquivo será enviado ao S3 e a URL gerada será vinculada à versão.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Arquivo do instalador Pro Campo</Label>
+                      <InstallerUpload
+                        onUploadComplete={setProInstallerUrl}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        O arquivo será enviado ao S3 e a URL gerada será vinculada à versão.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
